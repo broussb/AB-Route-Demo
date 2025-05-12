@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Route Selector Demo</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
@@ -119,7 +118,7 @@
             IVA: 95,
             Sierra: 5
           },
-          showSettings: false
+          showSettings: true
         };
       }
 
@@ -139,10 +138,8 @@
       handleGetRoute = () => {
         const newRoute = this.getRoute();
         
-        // Update history
         const newHistory = [...this.state.routeHistory, newRoute];
         
-        // Update stats
         const newStats = {...this.state.stats};
         newStats[newRoute] = (newStats[newRoute] || 0) + 1;
         
@@ -176,7 +173,6 @@
       }
 
       render() {
-        // Calculate percentages for stats
         const { routeHistory, stats, weights, showSettings, selectedRoute } = this.state;
         const total = routeHistory.length;
         const percentages = {};
@@ -185,7 +181,6 @@
           percentages[route] = total > 0 ? Math.round((stats[route] / total) * 100) : 0;
         });
         
-        // Calculate distribution percentages
         const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
         const distributionPercentages = {};
         
@@ -195,7 +190,25 @@
 
         return (
           <div className="container">
-            <h2>Route Selection Demo</h2>
+            
+            <div className="settings-panel">
+              <h3>Distribution Settings</h3>
+              <div className="stats-container">
+                {Object.keys(weights).map(route => (
+                  <div key={route} className="stat-card">
+                    <div><strong>{route}: {distributionPercentages[route]}%</strong></div>
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="99" 
+                      value={weights[route]} 
+                      onChange={(e) => this.handleWeightChange(route, e.target.value)}
+                    />
+                    <div>Weight: {weights[route]}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
             
             <div>
               <button 
@@ -211,38 +224,7 @@
               >
                 Clear Results
               </button>
-              
-              <button 
-                onClick={this.toggleSettings}
-                className="btn-secondary"
-              >
-                {showSettings ? "Hide Settings" : "Show Settings"}
-              </button>
             </div>
-            
-            {showSettings && (
-              <div className="settings-panel">
-                <h3>Distribution Settings</h3>
-                <div className="stats-container">
-                  {Object.keys(weights).map(route => (
-                    <div key={route} className="stat-card">
-                      <div><strong>{route}: {distributionPercentages[route]}%</strong></div>
-                      <input 
-                        type="range" 
-                        min="1" 
-                        max="99" 
-                        value={weights[route]} 
-                        onChange={(e) => this.handleWeightChange(route, e.target.value)}
-                      />
-                      <div>Weight: {weights[route]}</div>
-                    </div>
-                  ))}
-                </div>
-                <p style={{ fontSize: "14px", color: "#666" }}>
-                  Note: The relative weights determine the probability distribution.
-                </p>
-              </div>
-            )}
             
             {selectedRoute && (
               <div className="result-display">
