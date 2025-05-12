@@ -4,148 +4,129 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Route Selector Demo</title>
-  <!-- React Scripts -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
       margin: 0;
       padding: 0;
-      background-color: #f5f5f5;
     }
     .container {
       max-width: 600px;
       margin: 40px auto;
       padding: 20px;
-      background-color: white;
-      border-radius: 10px;
+      background: white;
+      border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
     .btn-primary {
       background-color: #3b82f6;
       color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-right: 10px;
     }
     .btn-secondary {
       background-color: #d1d5db;
       color: #374151;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
     }
-    .current-selection {
+    .result-display {
       background-color: #dbeafe;
-      padding: 16px;
+      padding: 15px;
       border-radius: 8px;
-      margin-bottom: 20px;
+      margin: 20px 0;
     }
-    .route-iva {
-      background-color: #3b82f6;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      margin: 4px;
+    .result-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1d4ed8;
     }
-    .route-sierra {
-      background-color: #10b981;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      margin: 4px;
-    }
-    .stats-grid {
+    .stats-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 20px;
+      gap: 15px;
+      margin: 20px 0;
     }
-    .stats-card {
+    .stat-card {
       border: 1px solid #e5e7eb;
       border-radius: 4px;
-      padding: 12px;
+      padding: 10px;
     }
     .progress-bar {
-      height: 16px;
+      height: 15px;
       background-color: #e5e7eb;
-      border-radius: 999px;
-      overflow: hidden;
+      border-radius: 10px;
       margin-top: 8px;
+      overflow: hidden;
     }
     .progress-fill {
       height: 100%;
       background-color: #10b981;
     }
-    .history-container {
-      border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      padding: 8px;
-      max-height: 120px;
-      overflow-y: auto;
+    .history-list {
       display: flex;
       flex-wrap: wrap;
+      gap: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 10px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    .history-item-iva {
+      background-color: #3b82f6;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .history-item-sierra {
+      background-color: #10b981;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
     }
     .settings-panel {
+      background-color: #f9fafb;
       border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 16px;
+      padding: 15px;
       margin-bottom: 20px;
-      background-color: #f9fafb;
     }
     input[type="range"] {
-      -webkit-appearance: none;
       width: 100%;
-      height: 8px;
-      border-radius: 5px;
-      background: #d1d5db;
-      outline: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #3b82f6;
-      cursor: pointer;
-    }
-    input[type="range"]::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #3b82f6;
-      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <!-- App Script -->
   <script type="text/babel">
-    // React Component
-    const RouteSelector = () => {
-      const [selectedRoute, setSelectedRoute] = React.useState(null);
-      const [routeHistory, setRouteHistory] = React.useState([]);
-      const [stats, setStats] = React.useState({});
-      const [weights, setWeights] = React.useState({
-        IVA: 95,
-        Sierra: 5
-      });
-      const [showSettings, setShowSettings] = React.useState(false);
+    class RouteSelector extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          selectedRoute: null,
+          routeHistory: [],
+          stats: {},
+          weights: {
+            IVA: 95,
+            Sierra: 5
+          },
+          showSettings: false
+        };
+      }
 
-      function getRoute() {
-        const paths = weights;
-        
+      getRoute = () => {
+        const paths = this.state.weights;
         const array = [];
+        
         for (const item in paths) {
           for (let i = 0; i < paths[item]; i++) {
             array.push(item);
@@ -155,154 +136,161 @@
         return array[Math.floor(Math.random() * array.length)];
       }
 
-      const handleGetRoute = () => {
-        const newRoute = getRoute();
-        setSelectedRoute(newRoute);
+      handleGetRoute = () => {
+        const newRoute = this.getRoute();
         
-        // Add to history
-        const newHistory = [...routeHistory, newRoute];
-        setRouteHistory(newHistory);
+        // Update history
+        const newHistory = [...this.state.routeHistory, newRoute];
         
         // Update stats
-        const newStats = {...stats};
+        const newStats = {...this.state.stats};
         newStats[newRoute] = (newStats[newRoute] || 0) + 1;
-        setStats(newStats);
-      };
+        
+        this.setState({
+          selectedRoute: newRoute,
+          routeHistory: newHistory,
+          stats: newStats
+        });
+      }
 
-      const handleWeightChange = (route, value) => {
-        const newWeights = { ...weights };
+      clearResults = () => {
+        this.setState({
+          selectedRoute: null,
+          routeHistory: [],
+          stats: {}
+        });
+      }
+
+      toggleSettings = () => {
+        this.setState({
+          showSettings: !this.state.showSettings
+        });
+      }
+
+      handleWeightChange = (route, value) => {
+        const newWeights = {...this.state.weights};
         newWeights[route] = parseInt(value);
-        setWeights(newWeights);
-      };
+        this.setState({
+          weights: newWeights
+        });
+      }
 
-      const toggleSettings = () => {
-        setShowSettings(!showSettings);
-      };
+      render() {
+        // Calculate percentages for stats
+        const { routeHistory, stats, weights, showSettings, selectedRoute } = this.state;
+        const total = routeHistory.length;
+        const percentages = {};
+        
+        Object.keys(stats).forEach(route => {
+          percentages[route] = total > 0 ? Math.round((stats[route] / total) * 100) : 0;
+        });
+        
+        // Calculate distribution percentages
+        const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
+        const distributionPercentages = {};
+        
+        Object.keys(weights).forEach(route => {
+          distributionPercentages[route] = Math.round((weights[route] / totalWeight) * 100);
+        });
 
-      const clearResults = () => {
-        setSelectedRoute(null);
-        setRouteHistory([]);
-        setStats({});
-      };
-
-      // Calculate percentages for stats
-      const total = routeHistory.length;
-      const percentages = {};
-      Object.keys(stats).forEach(route => {
-        percentages[route] = Math.round((stats[route] / total) * 100);
-      });
-
-      // Calculate distribution percentages
-      const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
-      const distributionPercentages = {};
-      Object.keys(weights).forEach(route => {
-        distributionPercentages[route] = Math.round((weights[route] / totalWeight) * 100);
-      });
-
-      return (
-        <div className="container">
-          <h2>Route Selection Demo</h2>
-          
-          <div style={{ marginBottom: "20px" }}>
-            <button 
-              onClick={handleGetRoute}
-              className="btn-primary"
-            >
-              Get Random Route
-            </button>
+        return (
+          <div className="container">
+            <h2>Route Selection Demo</h2>
             
-            <button 
-              onClick={clearResults}
-              className="btn-secondary"
-              style={{ marginRight: "10px" }}
-            >
-              Clear Results
-            </button>
-            
-            <button 
-              onClick={toggleSettings}
-              className="btn-secondary"
-            >
-              {showSettings ? "Hide Settings" : "Show Settings"}
-            </button>
-          </div>
-          
-          {showSettings && (
-            <div className="settings-panel">
-              <h3>Distribution Settings</h3>
-              <div className="stats-grid">
-                {Object.keys(weights).map(route => (
-                  <div key={route} className="stats-card">
-                    <div style={{ fontWeight: "bold" }}>{route}: {distributionPercentages[route]}%</div>
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="99" 
-                      value={weights[route]} 
-                      onChange={(e) => handleWeightChange(route, e.target.value)}
-                      style={{ width: "100%", marginTop: "10px" }}
-                    />
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Weight: {weights[route]}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p style={{ fontSize: "14px", color: "#666", marginTop: "10px" }}>
-                Note: The relative weights determine the probability distribution.
-              </p>
-            </div>
-          )}
-          
-          {selectedRoute && (
-            <div className="current-selection">
-              <h3>Current Selection:</h3>
-              <div style={{ fontSize: "24px", fontWeight: "bold", color: "#1d4ed8" }}>{selectedRoute}</div>
-            </div>
-          )}
-          
-          {routeHistory.length > 0 && (
-            <div style={{ marginBottom: "20px" }}>
-              <h3>Statistics:</h3>
-              <div className="stats-grid">
-                {Object.keys(stats).map(route => (
-                  <div key={route} className="stats-card">
-                    <div style={{ fontWeight: "bold" }}>{route}</div>
-                    <div style={{ fontSize: "14px" }}>
-                      Count: {stats[route]} ({percentages[route]}%)
-                    </div>
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill"
-                        style={{ width: `${percentages[route]}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {routeHistory.length > 0 && (
             <div>
-              <h3>History ({routeHistory.length} selections):</h3>
-              <div className="history-container">
-                {routeHistory.map((route, index) => (
-                  <span 
-                    key={index} 
-                    className={route === 'IVA' ? 'route-iva' : 'route-sierra'}
-                  >
-                    {route}
-                  </span>
-                ))}
-              </div>
+              <button 
+                onClick={this.handleGetRoute}
+                className="btn-primary"
+              >
+                Get Random Route
+              </button>
+              
+              <button 
+                onClick={this.clearResults}
+                className="btn-secondary"
+              >
+                Clear Results
+              </button>
+              
+              <button 
+                onClick={this.toggleSettings}
+                className="btn-secondary"
+              >
+                {showSettings ? "Hide Settings" : "Show Settings"}
+              </button>
             </div>
-          )}
-        </div>
-      );
+            
+            {showSettings && (
+              <div className="settings-panel">
+                <h3>Distribution Settings</h3>
+                <div className="stats-container">
+                  {Object.keys(weights).map(route => (
+                    <div key={route} className="stat-card">
+                      <div><strong>{route}: {distributionPercentages[route]}%</strong></div>
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="99" 
+                        value={weights[route]} 
+                        onChange={(e) => this.handleWeightChange(route, e.target.value)}
+                      />
+                      <div>Weight: {weights[route]}</div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontSize: "14px", color: "#666" }}>
+                  Note: The relative weights determine the probability distribution.
+                </p>
+              </div>
+            )}
+            
+            {selectedRoute && (
+              <div className="result-display">
+                <h3>Current Selection:</h3>
+                <div className="result-value">{selectedRoute}</div>
+              </div>
+            )}
+            
+            {routeHistory.length > 0 && (
+              <div>
+                <h3>Statistics:</h3>
+                <div className="stats-container">
+                  {Object.keys(stats).map(route => (
+                    <div key={route} className="stat-card">
+                      <div><strong>{route}</strong></div>
+                      <div>Count: {stats[route]} ({percentages[route]}%)</div>
+                      <div className="progress-bar">
+                        <div 
+                          className="progress-fill"
+                          style={{ width: `${percentages[route]}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {routeHistory.length > 0 && (
+              <div>
+                <h3>History ({routeHistory.length} selections):</h3>
+                <div className="history-list">
+                  {routeHistory.map((route, index) => (
+                    <span 
+                      key={index} 
+                      className={route === 'IVA' ? 'history-item-iva' : 'history-item-sierra'}
+                    >
+                      {route}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
     }
 
-    // Render the app
     ReactDOM.render(<RouteSelector />, document.getElementById('root'));
   </script>
 </body>
