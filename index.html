@@ -133,7 +133,7 @@
   <script type="text/babel">
     // React Component
     const RouteSelector = () => {
-      const [selectedRoute, React.useState(null)];
+      const [selectedRoute, setSelectedRoute] = React.useState(null);
       const [routeHistory, setRouteHistory] = React.useState([]);
       const [stats, setStats] = React.useState({});
       const [weights, setWeights] = React.useState({
