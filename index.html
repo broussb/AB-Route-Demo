@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Selector Demo</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
@@ -24,6 +25,7 @@
     button {
       padding: 10px 20px;
       margin-right: 10px;
+      margin-bottom: 10px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -76,7 +78,7 @@
       border: 1px solid #e5e7eb;
       border-radius: 4px;
       padding: 10px;
-      max-height: 100px;
+      max-height: 150px;
       overflow-y: auto;
     }
     .history-item-iva {
@@ -101,6 +103,26 @@
     input[type="range"] {
       width: 100%;
     }
+    .spinner {
+      display: inline-block;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #3b82f6;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -118,7 +140,8 @@
             IVA: 95,
             Sierra: 5
           },
-          showSettings: true
+          isProcessing: false,
+          simulationCount: 100
         };
       }
 
@@ -136,18 +159,30 @@
       }
 
       handleGetRoute = () => {
-        const newRoute = this.getRoute();
+        this.setState({ isProcessing: true });
         
-        const newHistory = [...this.state.routeHistory, newRoute];
-        
-        const newStats = {...this.state.stats};
-        newStats[newRoute] = (newStats[newRoute] || 0) + 1;
-        
-        this.setState({
-          selectedRoute: newRoute,
-          routeHistory: newHistory,
-          stats: newStats
-        });
+        // Use setTimeout to avoid blocking the UI
+        setTimeout(() => {
+          const { simulationCount } = this.state;
+          const newHistory = [...this.state.routeHistory];
+          const newStats = {...this.state.stats};
+          let lastRoute = null;
+          
+          // Generate 100 routes at once
+          for (let i = 0; i < simulationCount; i++) {
+            const route = this.getRoute();
+            newHistory.push(route);
+            newStats[route] = (newStats[route] || 0) + 1;
+            lastRoute = route;
+          }
+          
+          this.setState({
+            selectedRoute: lastRoute,
+            routeHistory: newHistory,
+            stats: newStats,
+            isProcessing: false
+          });
+        }, 10);
       }
 
       clearResults = () => {
@@ -158,12 +193,6 @@
         });
       }
 
-      toggleSettings = () => {
-        this.setState({
-          showSettings: !this.state.showSettings
-        });
-      }
-
       handleWeightChange = (route, value) => {
         const newWeights = {...this.state.weights};
         newWeights[route] = parseInt(value);
@@ -171,9 +200,24 @@
           weights: newWeights
         });
       }
+      
+      handleSimCountChange = (event) => {
+        this.setState({
+          simulationCount: parseInt(event.target.value)
+        });
+      }
 
       render() {
-        const { routeHistory, stats, weights, showSettings, selectedRoute } = this.state;
+        // Calculate percentages for stats
+        const { 
+          routeHistory, 
+          stats, 
+          weights, 
+          selectedRoute, 
+          isProcessing,
+          simulationCount
+        } = this.state;
+        
         const total = routeHistory.length;
         const percentages = {};
         
@@ -181,6 +225,7 @@
           percentages[route] = total > 0 ? Math.round((stats[route] / total) * 100) : 0;
         });
         
+        // Calculate distribution percentages
         const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
         const distributionPercentages = {};
         
@@ -190,6 +235,7 @@
 
         return (
           <div className="container">
+            <h2>Route Selection Demo</h2>
             
             <div className="settings-panel">
               <h3>Distribution Settings</h3>
@@ -208,34 +254,54 @@
                   </div>
                 ))}
               </div>
+              <p style={{ fontSize: "14px", color: "#666" }}>
+                Note: The relative weights determine the probability distribution.
+              </p>
+              
+              <div style={{ marginTop: "15px" }}>
+                <label><strong>Simulation Count: </strong></label>
+                <select 
+                  value={simulationCount} 
+                  onChange={this.handleSimCountChange}
+                  style={{ padding: "5px", borderRadius: "4px", marginLeft: "10px" }}
+                >
+                  <option value="10">10 calls</option>
+                  <option value="50">50 calls</option>
+                  <option value="100">100 calls</option>
+                  <option value="500">500 calls</option>
+                  <option value="1000">1000 calls</option>
+                </select>
+              </div>
             </div>
             
             <div>
               <button 
                 onClick={this.handleGetRoute}
                 className="btn-primary"
+                disabled={isProcessing}
               >
-                Get Random Route
+                {isProcessing ? (
+                  <>Generating Routes <span className="spinner"></span></>
+                ) : (
+                  `Simulate ${simulationCount} Route Calls`
+                )}
               </button>
               
               <button 
                 onClick={this.clearResults}
                 className="btn-secondary"
+                disabled={isProcessing}
               >
                 Clear Results
               </button>
             </div>
             
-            {selectedRoute && (
-              <div className="result-display">
-                <h3>Current Selection:</h3>
-                <div className="result-value">{selectedRoute}</div>
-              </div>
-            )}
-            
-            {routeHistory.length > 0 && (
-              <div>
-                <h3>Statistics:</h3>
+            {stats && Object.keys(stats).length > 0 && (
+              <div className="card">
+                <h3>Results Summary</h3>
+                <div style={{ fontSize: "14px", marginBottom: "10px" }}>
+                  Total simulations: <strong>{total}</strong>
+                </div>
                 <div className="stats-container">
                   {Object.keys(stats).map(route => (
                     <div key={route} className="stat-card">
@@ -249,6 +315,16 @@
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedRoute && (
+              <div className="result-display">
+                <h3>Last Selection:</h3>
+                <div className="result-value">{selectedRoute}</div>
+                <div style={{ marginTop: "10px", fontSize: "14px" }}>
+                  This was the last route selected in the batch of {simulationCount} simulations.
                 </div>
               </div>
             )}
