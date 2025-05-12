@@ -1,17 +1,17 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { useState } from 'react';
+const { useState } = React;
 
-const RouteSelector = () => {
+function RouteSelector() {
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [routeHistory, setRouteHistory] = useState([]);
   const [stats, setStats] = useState({});
+  const [weights, setWeights] = useState({
+    IVA: 95,
+    Sierra: 5
+  });
+  const [showSettings, setShowSettings] = useState(false);
 
   function getRoute() {
-    const paths = {
-      IVA: 95,
-      Sierra: 5,
-    };
+    const paths = weights;
     
     const array = [];
     for (const item in paths) {
@@ -37,6 +37,16 @@ const RouteSelector = () => {
     setStats(newStats);
   };
 
+  const handleWeightChange = (route, value) => {
+    const newWeights = { ...weights };
+    newWeights[route] = parseInt(value);
+    setWeights(newWeights);
+  };
+
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
+
   const clearResults = () => {
     setSelectedRoute(null);
     setRouteHistory([]);
@@ -50,47 +60,89 @@ const RouteSelector = () => {
     percentages[route] = Math.round((stats[route] / total) * 100);
   });
 
+  // Calculate distribution percentages
+  const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
+  const distributionPercentages = {};
+  Object.keys(weights).forEach(route => {
+    distributionPercentages[route] = Math.round((weights[route] / totalWeight) * 100);
+  });
+
   return (
-    <div className="p-6 max-w-lg mx-auto bg-white rounded-xl shadow-md">
-      <h2 className="text-xl font-bold mb-4">Route Selection Demo</h2>
+    <div className="container">
+      <h2>Route Selection Demo</h2>
       
-      <div className="mb-6">
+      <div style={{ marginBottom: "20px" }}>
         <button 
           onClick={handleGetRoute}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2"
+          className="btn-primary"
         >
           Get Random Route
         </button>
         
         <button 
           onClick={clearResults}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          className="btn-secondary"
+          style={{ marginRight: "10px" }}
         >
           Clear Results
         </button>
+        
+        <button 
+          onClick={toggleSettings}
+          className="btn-secondary"
+        >
+          {showSettings ? "Hide Settings" : "Show Settings"}
+        </button>
       </div>
       
+      {showSettings && (
+        <div className="settings-panel">
+          <h3>Distribution Settings</h3>
+          <div className="stats-grid">
+            {Object.keys(weights).map(route => (
+              <div key={route} className="stats-card">
+                <div style={{ fontWeight: "bold" }}>{route}: {distributionPercentages[route]}%</div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="99" 
+                  value={weights[route]} 
+                  onChange={(e) => handleWeightChange(route, e.target.value)}
+                  style={{ width: "100%", marginTop: "10px" }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Weight: {weights[route]}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: "14px", color: "#666", marginTop: "10px" }}>
+            Note: The relative weights determine the probability distribution.
+          </p>
+        </div>
+      )}
+      
       {selectedRoute && (
-        <div className="mb-6 p-4 bg-blue-100 rounded-lg">
-          <h3 className="font-bold mb-2">Current Selection:</h3>
-          <div className="text-2xl font-bold text-blue-700">{selectedRoute}</div>
+        <div className="current-selection">
+          <h3>Current Selection:</h3>
+          <div style={{ fontSize: "24px", fontWeight: "bold", color: "#1d4ed8" }}>{selectedRoute}</div>
         </div>
       )}
       
       {routeHistory.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-bold mb-2">Statistics:</h3>
-          <div className="grid grid-cols-2 gap-4">
+        <div style={{ marginBottom: "20px" }}>
+          <h3>Statistics:</h3>
+          <div className="stats-grid">
             {Object.keys(stats).map(route => (
-              <div key={route} className="p-3 border rounded">
-                <div className="font-bold">{route}</div>
-                <div className="text-sm">
+              <div key={route} className="stats-card">
+                <div style={{ fontWeight: "bold" }}>{route}</div>
+                <div style={{ fontSize: "14px" }}>
                   Count: {stats[route]} ({percentages[route]}%)
                 </div>
-                <div className="mt-2 h-4 bg-gray-200 rounded-full overflow-hidden">
+                <div className="progress-bar">
                   <div 
-                    className="h-full bg-green-500" 
-                    style={{width: `${percentages[route]}%`}}
+                    className="progress-fill"
+                    style={{ width: `${percentages[route]}%` }}
                   ></div>
                 </div>
               </div>
@@ -101,12 +153,12 @@ const RouteSelector = () => {
       
       {routeHistory.length > 0 && (
         <div>
-          <h3 className="font-bold mb-2">History ({routeHistory.length} selections):</h3>
-          <div className="flex flex-wrap gap-2 p-2 border rounded max-h-32 overflow-y-auto">
+          <h3>History ({routeHistory.length} selections):</h3>
+          <div className="history-container">
             {routeHistory.map((route, index) => (
               <span 
                 key={index} 
-                className={`inline-block px-2 py-1 rounded text-white ${route === 'IVA' ? 'bg-blue-500' : 'bg-green-500'}`}
+                className={route === 'IVA' ? 'route-iva' : 'route-sierra'}
               >
                 {route}
               </span>
@@ -116,11 +168,6 @@ const RouteSelector = () => {
       )}
     </div>
   );
-};
+}
 
-// Create a root and render the component
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<RouteSelector />);
-
-// We keep this export for module compatibility, though it's not needed for the standalone version
-export default RouteSelector;
+ReactDOM.render(<RouteSelector />, document.getElementById('root'));
